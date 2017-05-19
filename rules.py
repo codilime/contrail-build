@@ -745,8 +745,8 @@ def ThriftGenCppFunc(env, file, async):
 
 def ThriftPyBuilder(source, target, env, for_signature):
     output_dir = os.path.dirname(os.path.dirname(str(target[0])))
-    return ('%s/thrift --gen py:new_style,utf8strings -I src/ -out %s %s' %
-            (env.Dir(env['TOP_BIN']), output_dir, source[0]))
+    return ('%s --gen py:new_style,utf8strings -I src/ -out %s %s' %
+            (os.path.join(env.Dir(env['TOP_BIN']).abspath, 'thrift'), output_dir, source[0]))
 
 def ThriftSconsEnvPyFunc(env):
     pybuild = Builder(generator = ThriftPyBuilder)
