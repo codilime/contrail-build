@@ -248,7 +248,7 @@ def UnitTest(env, name, sources, **kwargs):
            not env['ENV'].has_key('NO_HEAPCHECK') and \
            env.get('OPT') != 'valgrind':
         test_env.Append(LIBPATH = '#/build/lib')
-        test_env.Append(LIBS = ['tcmalloc'])
+#        test_env.Append(LIBS = ['tcmalloc'])
     test_exe_list = test_env.Program(name, sources)
     if test_env.PlatformExclude(**kwargs):
         for t in test_exe_list: t.attributes.skip_run = True
