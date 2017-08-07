@@ -112,6 +112,8 @@ def RunUnitTest(env, target, source, timeout = 300):
         # https://code.google.com/p/gperftools/issues/detail?id=497
         ShEnv['LD_BIND_NOW'] = '1'
 
+    if 'CONCURRENCY_CHECK_ENABLE' not in ShEnv:
+        ShEnv['CONCURRENCY_CHECK_ENABLE'] = 'true'
     proc = subprocess.Popen(cmd, stdout=logfile, stderr=logfile, env=ShEnv)
 
     # 60 second timeout
@@ -551,7 +553,8 @@ def SandeshGenDocFunc(env, filepath, target=''):
                 '_traces.html',
                 '_traces.doc.schema.json',
                 '_introspect.html',
-                '_introspect.doc.schema.json']
+                '_introspect.doc.schema.json',
+                '_stats_tables.json']
     basename = Basename(filepath)
     path_split = basename.rsplit('/', 1)
     if len(path_split) == 2:
@@ -697,6 +700,23 @@ def SandeshGenPyFunc(env, path, target='', gen_py=True):
     env.Depends(targets, '#build/bin/sandesh' + env['PROGSUFFIX'])
     return env.SandeshPy(targets, path)
 
+# Golang Methods for CNI
+def GoCniFunc(env, filepath, target=''):
+    # get dependencies
+    goenv = os.environ.copy()
+    goenv['GOROOT'] = env.Dir('#/third_party/go').abspath
+    goenv['GOPATH'] = env.Dir('#/third_party/cni_go_deps').abspath
+    goenv['GOBIN'] = env.Dir(env['TOP'] + '/container/cni/bin').abspath
+    cni_path = env.Dir('#/' + env.Dir('.').srcnode().path).abspath
+    go_cmd = goenv['GOROOT'] + '/bin/go '
+    try:
+        cmd = 'cd ' + cni_path + ';'
+        cmd += go_cmd + 'install'
+        code = subprocess.call(cmd, shell=True, env=goenv)
+    except Exception as e:
+        print str(e)
+    return env['TOP'] + '/container/cni/bin/' + filepath
+
 # ThriftGenCpp Methods
 ThriftServiceRe = re.compile(r'service\s+(\S+)\s*{', re.M)
 def ThriftServicesFunc(node):
@@ -767,6 +787,21 @@ def CreateIFMapBuilder(env):
                       src_suffix = '.xsd',
                       emitter = IFMapTargetGen)
     env.Append(BUILDERS = { 'IFMapAutogen' : builder})
+
+def DeviceAPIBuilderCmd(source, target, env, for_signature):
+    output = Basename(source[0].abspath)
+    return './tools/generateds/generateDS.py -f -g device-api -o %s %s' % (output, source[0])
+
+def DeviceAPITargetGen(target, source, env):
+    suffixes = []
+    basename = Basename(source[0].abspath)
+    targets = map(lambda x: basename + x, suffixes)
+    return targets, source
+
+def CreateDeviceAPIBuilder(env):
+    builder = Builder(generator = DeviceAPIBuilderCmd,
+                      src_suffix = '.xsd')
+    env.Append(BUILDERS = { 'DeviceAPIAutogen' : builder})
 
 def TypeBuilderCmd(source, target, env, for_signature):
     output = Basename(source[0].abspath)
@@ -952,7 +987,7 @@ def determine_job_value():
 
 
 def SetupBuildEnvironment(conf):
-    AddOption('--optimization', dest = 'opt',
+    AddOption('--optimization', '--opt', dest = 'opt',
               action='store', default='debug',
               choices = ['debug', 'production', 'coverage', 'profile', 'valgrind'],
               help='optimization level: [debug|production|coverage|profile|valgrind]')
@@ -989,7 +1024,9 @@ def SetupBuildEnvironment(conf):
     env['INSTALL_LIB'] = ''
     env['INSTALL_INIT'] = ''
     env['INSTALL_INITD'] = ''
+    env['INSTALL_SYSTEMD'] = ''
     env['INSTALL_CONF'] = ''
+    env['INSTALL_SNMP_CONF'] = ''
     env['INSTALL_EXAMPLE'] = ''
     env['PYTHON_INSTALL_OPT'] = ''
     env['INSTALL_DOC'] = ''
@@ -1001,7 +1038,9 @@ def SetupBuildEnvironment(conf):
         env['INSTALL_LIB'] = install_root
         env['INSTALL_INIT'] = install_root
         env['INSTALL_INITD'] = install_root
+        env['INSTALL_SYSTEMD'] = install_root
         env['INSTALL_CONF'] = install_root
+        env['INSTALL_SNMP_CONF'] = install_root
         env['INSTALL_EXAMPLE'] = install_root
         env['INSTALL_DOC'] = install_root
         env['PYTHON_INSTALL_OPT'] = '--root ' + install_root + ' '
@@ -1013,6 +1052,7 @@ def SetupBuildEnvironment(conf):
         env['INSTALL_LIB'] += install_prefix
         env['INSTALL_INIT'] += install_prefix
         env['INSTALL_INITD'] += install_prefix
+        env['INSTALL_SYSTEMD'] += install_prefix
         env['PYTHON_INSTALL_OPT'] += '--prefix ' + install_prefix + ' '
     elif install_root:
         env['INSTALL_BIN'] += '/usr'
@@ -1027,7 +1067,9 @@ def SetupBuildEnvironment(conf):
     env['INSTALL_LIB'] += '/lib'
     env['INSTALL_INIT'] += '/etc/init'
     env['INSTALL_INITD'] += '/etc/init.d'
+    env['INSTALL_SYSTEMD'] += '/lib/systemd/system'
     env['INSTALL_CONF'] += '/etc/contrail'
+    env['INSTALL_SNMP_CONF'] += '/etc/snmp'
     env['INSTALL_EXAMPLE'] += '/usr/share/contrail'
     env['INSTALL_DOC'] += '/usr/share/doc'
 
@@ -1088,35 +1130,41 @@ def SetupBuildEnvironment(conf):
 
     opt_level = env['OPT']
     if opt_level == 'production':
-        env.Append(CCFLAGS = '-g -O3')
-        env.Append(LINKFLAGS= ['-g'])
+        env.Append(CCFLAGS = '-O3')
         env['TOP'] = '#build/production'
     elif opt_level == 'debug':
         env['TARGET_CONFIG'] ='debug'
         if sys.platform == 'win32':
             # Enable runtime checks and disable optimization
             env.Append(CCFLAGS = '/RTC1')
-            # Enable multithreaded debug dll build and define _DEBUG
-            env.Append(CCFLAGS = '/MDd')
-            env.Append(LINKFLAGS= ['/DEBUG'])
         else:
             env.Append(CCFLAGS = ['-g', '-O0', '-DDEBUG'])
             env.Append(LINKFLAGS= ['-g'])
         env['TOP'] = '#build/debug'
     elif opt_level == 'profile':
         # Enable profiling through gprof
-        env.Append(CCFLAGS = ['-g', '-O3', '-DDEBUG', '-pg'])
+        env.Append(CCFLAGS = ['-O3', '-DDEBUG', '-pg'])
         env.Append(LINKFLAGS = ['-pg'])
         env['TOP'] = '#build/profile'
     elif opt_level == 'coverage':
-        env.Append(CCFLAGS = ['-g', '-O0', '--coverage'])
-        env.Append(LINKFLAGS = ['-g'])
+        env.Append(CCFLAGS = ['-O0', '--coverage'])
         env['TOP'] = '#build/coverage'
         env.Append(LIBS = 'gcov')
     elif opt_level == 'valgrind':
-        env.Append(CCFLAGS = ['-g', '-O0', '-DDEBUG'])
-        env.Append(LINKFLAGS= ['-g'])
+        env.Append(CCFLAGS = ['-O0', '-DDEBUG'])
         env['TOP'] = '#build/valgrind'
+
+    if not "CONTRAIL_COMPILE_WITHOUT_SYMBOLS" in os.environ:
+        if sys.platform == 'win32':
+            # Enable multithreaded debug dll build and define _DEBUG
+            env.Append(CCFLAGS = '/MDd')
+            env.Append(LINKFLAGS= ['/DEBUG'])
+        else:
+            env.Append(CCFLAGS = '-g')
+            env.Append(LINKFLAGS = '-g')
+    elif sys.platform == 'win32':
+        # Enable multithreaded dll build
+        env.Append(CCFLAGS = '/MD')
 
     env.Append(BUILDERS = {'PyTestSuite': PyTestSuite })
     env.Append(BUILDERS = {'TestSuite': TestSuite })
@@ -1140,11 +1188,13 @@ def SetupBuildEnvironment(conf):
     env.AddMethod(SandeshGenCFunc, "SandeshGenC")
     env.AddMethod(SandeshGenPyFunc, "SandeshGenPy")
     env.AddMethod(SandeshGenDocFunc, "SandeshGenDoc")
+    env.AddMethod(GoCniFunc, "GoCniBuild")
     env.AddMethod(ThriftGenCppFunc, "ThriftGenCpp")
     ThriftSconsEnvPyFunc(env)
     env.AddMethod(ThriftGenPyFunc, "ThriftGenPy")
     CreateIFMapBuilder(env)
     CreateTypeBuilder(env)
+    CreateDeviceAPIBuilder(env)
 
     PyTestSuiteCovBuilder = Builder(action = PyTestSuiteCov)
     env.Append(BUILDERS = {'PyTestSuiteCov' : PyTestSuiteCovBuilder})
