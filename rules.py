@@ -573,8 +573,8 @@ def SandeshOnlyCppBuilder(target, source, env):
     if code != 0:
         raise SCons.Errors.StopError(SandeshCodeGeneratorError,
                                      'SandeshOnlyCpp code generation failed')
-    with open(html_cpp_name, "a") as html_cpp_file:
-        html_cpp_file.write("int " + sname + "_marker = 0;")
+    with open(html_cpp_name, 'a') as html_cpp_file:
+        html_cpp_file.write('int ' + sname + '_marker = 0;\n')
 
 def SandeshSconsEnvOnlyCppFunc(env):
     onlycppbuild = Builder(action = Action(SandeshOnlyCppBuilder,'SandeshOnlyCppBuilder $SOURCE -> $TARGETS'))
@@ -609,12 +609,12 @@ def SandeshCppBuilder(target, source, env):
     if not env.Detect('xxd'):
         raise SCons.Errors.StopError(SandeshCodeGeneratorError,
                                      'xxd not detected on system')
-    with open(cname, "a") as cfile:
-        cfile.write("namespace {")
-    subprocess.call("xxd -i " + hname + " >> " + os.path.basename(cname), shell=True, cwd=opath)
-    with open(cname, "a") as cfile:
-        cfile.write("}")
-    subprocess.call("cat " + tname + " >> " + cname, shell=True)
+    with open(cname, 'a') as cfile:
+        cfile.write('namespace {\n')
+    subprocess.call('xxd -i ' + hname + ' >> ' + os.path.basename(cname), shell=True, cwd=opath)
+    with open(cname, 'a') as cfile:
+        cfile.write('}\n')
+    subprocess.call('cat ' + tname + ' >> ' + cname, shell=True)
 
 def SandeshSconsEnvCppFunc(env):
     cppbuild = Builder(action = Action(SandeshCppBuilder, 'SandeshCppBuilder $SOURCE -> $TARGETS'))
