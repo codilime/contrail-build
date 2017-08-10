@@ -1083,7 +1083,7 @@ def SetupBuildEnvironment(conf):
         env.Append(CCFLAGS = '/D_WIN32_WINNT=0x0A00')
         # Set exception handling model
         env.Append(CCFLAGS = '/EHsc')
-        # Disable min/max macros
+        # Disable min/max macros to avoid conflicts
         env.Append(CCFLAGS = '/DNOMINMAX')
         # Disable MSVC paranoid warnings
         env.Append(CCFLAGS = ['/D_SCL_SECURE_NO_WARNINGS', '/D_CRT_SECURE_NO_WARNINGS'])
