@@ -1062,8 +1062,7 @@ def SetupBuildEnvironment(conf):
 
     # Store the hostname in env.
     if 'HOSTNAME' not in env:
-        build_host = platform.node()
-        env['HOSTNAME'] = build_host
+        env['HOSTNAME'] = platform.node()
 
     # Store repo projects in the environment
     proc = subprocess.Popen('repo list', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell='True')
