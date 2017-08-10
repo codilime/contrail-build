@@ -1062,8 +1062,7 @@ def SetupBuildEnvironment(conf):
 
     # Store the hostname in env.
     if 'HOSTNAME' not in env:
-        build_host = platform.node()
-        env['HOSTNAME'] = build_host
+        env['HOSTNAME'] = platform.node()
 
     # Store repo projects in the environment
     proc = subprocess.Popen('repo list', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell='True')
@@ -1079,11 +1078,13 @@ def SetupBuildEnvironment(conf):
         env.Append(CCFLAGS = '/Iwindows')
         env.Append(CCFLAGS = '/D_WINDOWS')
 
-        # Set Windows 10 as target system
+        # Set Windows Server 2016 as target system
         env.Append(CCFLAGS = '/D_WIN32_WINNT=0x0A00')
         # Set exception handling model
         env.Append(CCFLAGS = '/EHsc')
-        # Disable msvc paranoid warnings
+        # Disable min/max macros to avoid conflicts
+        env.Append(CCFLAGS = '/DNOMINMAX')
+        # Disable MSVC paranoid warnings
         env.Append(CCFLAGS = ['/D_SCL_SECURE_NO_WARNINGS', '/D_CRT_SECURE_NO_WARNINGS'])
 
     opt_level = env['OPT']
