@@ -1079,11 +1079,13 @@ def SetupBuildEnvironment(conf):
         env.Append(CCFLAGS = '/Iwindows')
         env.Append(CCFLAGS = '/D_WINDOWS')
 
-        # Set Windows 10 as target system
+        # Set Windows Server 2016 as target system
         env.Append(CCFLAGS = '/D_WIN32_WINNT=0x0A00')
         # Set exception handling model
         env.Append(CCFLAGS = '/EHsc')
-        # Disable msvc paranoid warnings
+        # Disable min/max macros
+        env.Append(CCFLAGS = '/DNOMINMAX')
+        # Disable MSVC paranoid warnings
         env.Append(CCFLAGS = ['/D_SCL_SECURE_NO_WARNINGS', '/D_CRT_SECURE_NO_WARNINGS'])
 
     opt_level = env['OPT']
