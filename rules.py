@@ -1159,6 +1159,8 @@ def SetupBuildEnvironment(conf):
         if sys.platform == 'win32':
             # Enable multithreaded debug dll build and define _DEBUG
             env.Append(CCFLAGS = '/MDd')
+            # Enable full symbolic debugging information
+            env.Append(CCFLAGS = '/Z7')
             env.Append(LINKFLAGS= ['/DEBUG'])
         else:
             env.Append(CCFLAGS = '-g')
