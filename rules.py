@@ -1099,6 +1099,8 @@ def SetupBuildEnvironment(conf):
             env.Append(CCFLAGS = '/RTC1')
             # Enable multithreaded debug dll build and define _DEBUG
             env.Append(CCFLAGS = '/MDd')
+            # Enable full symbolic debugging information
+            env.Append(CCFLAGS = '/Z7')
             env.Append(LINKFLAGS= ['/DEBUG'])
         else:
             env.Append(CCFLAGS = ['-g', '-O0', '-DDEBUG'])
