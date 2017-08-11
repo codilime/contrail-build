@@ -1139,8 +1139,7 @@ def SetupBuildEnvironment(conf):
             # Enable runtime checks and disable optimization
             env.Append(CCFLAGS = '/RTC1')
         else:
-            env.Append(CCFLAGS = ['-g', '-O0', '-DDEBUG'])
-            env.Append(LINKFLAGS= ['-g'])
+            env.Append(CCFLAGS = ['-O0', '-DDEBUG'])
         env['TOP'] = '#build/debug'
     elif opt_level == 'profile':
         # Enable profiling through gprof
