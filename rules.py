@@ -236,9 +236,8 @@ def UnitTest(env, name, sources, **kwargs):
     test_env = env.Clone()
 
     # Do not link with tcmalloc when running under valgrind/coverage env.
-    if sys.platform != 'darwin' and env.get('OPT') != 'coverage' and \
-           not env['ENV'].has_key('NO_HEAPCHECK') and \
-           env.get('OPT') != 'valgrind':
+    if sys.platform != 'darwin' and sys.platform != 'win32' and env.get('OPT') != 'coverage' and \
+           not env['ENV'].has_key('NO_HEAPCHECK') and env.get('OPT') != 'valgrind':
         test_env.Append(LIBPATH = '#/build/lib')
         test_env.Append(LIBS = ['tcmalloc'])
     test_exe_list = test_env.Program(name, sources)
