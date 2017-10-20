@@ -1074,7 +1074,7 @@ def SetupBuildEnvironment(conf):
     env['REPO_PROJECTS'] = repo_list
 
     if sys.platform == 'win32':
-        env.Append(CCFLAGS = '/Iwindows')
+        env.Append(CCFLAGS = '/Iwindows/inc')
         env.Append(CCFLAGS = '/D_WINDOWS')
 
         # Set Windows Server 2016 as target system
