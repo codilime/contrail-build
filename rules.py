@@ -1090,11 +1090,16 @@ def SetupBuildEnvironment(conf):
 
     opt_level = env['OPT']
     if opt_level == 'production':
-        env.Append(CCFLAGS = '-g -O3')
-        env.Append(LINKFLAGS= ['-g'])
+        if sys.platform == 'win32':
+            # Enable full optimization
+            env.Append(CCFLAGS = '/Ox')
+            # Enable multithreaded release dll build
+            env.Append(CCFLAGS = '/MD')
+        else:
+            env.Append(CCFLAGS = '-g -O3')
+            env.Append(LINKFLAGS= ['-g'])
         env['TOP'] = '#build/production'
     elif opt_level == 'debug':
-        env['TARGET_CONFIG'] ='debug'
         if sys.platform == 'win32':
             # Enable runtime checks and disable optimization
             env.Append(CCFLAGS = '/RTC1')
