@@ -8,7 +8,7 @@ from SCons.Builder import Builder
 from SCons.Action import Action
 from SCons.Errors import convert_to_BuildError
 from SCons.Script import AddOption, GetOption, SetOption
-from SCons.Tool.MSCommon.vc import VCVER
+from SCons.Tool.MSCommon.vc import _VCVER as VCVER
 import json
 import SCons.Util
 import subprocess
