@@ -8,6 +8,7 @@ from SCons.Builder import Builder
 from SCons.Action import Action
 from SCons.Errors import convert_to_BuildError
 from SCons.Script import AddOption, GetOption, SetOption
+from SCons.Tool.MSCommon.vc import VCVER
 import json
 import SCons.Util
 import subprocess
@@ -964,6 +965,10 @@ def SetupBuildEnvironment(conf):
     AddOption('--prefix', dest = 'install_prefix', action='store')
     AddOption('--pytest', dest = 'pytest', action='store')
 
+    AddOption('--msvc-version', dest='msvc_version', action='store',
+              choices=VCVER,
+              help='Disable VS autodetection and use selected Visual Studio version: [%s]' % '|'.join(VCVER))
+
     env = CheckBuildConfiguration(conf)
 
     env.AddMethod(PlatformExclude, "PlatformExclude")
@@ -1020,6 +1025,11 @@ def SetupBuildEnvironment(conf):
         env['PYTHON_INSTALL_OPT'] += '--prefix /usr '
     else:
         env['INSTALL_BIN'] += '/usr/local'
+
+    msvc_version = GetOption('msvc_version')
+    if msvc_version:
+        env['MSVC_USE_SCRIPT'] = False
+        env['MSVC_VERSION'] = msvc_version
 
     env['INSTALL_BIN'] += '/bin'
     env['INSTALL_SHARE'] += '/share'
