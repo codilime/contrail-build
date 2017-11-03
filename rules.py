@@ -1086,15 +1086,20 @@ def SetupBuildEnvironment(conf):
         # Disable MSVC paranoid warnings
         env.Append(CCFLAGS = ['/D_SCL_SECURE_NO_WARNINGS', '/D_CRT_SECURE_NO_WARNINGS'])
         # Stop Windows.h from including a lot of useless header files
-        env.Append(CCFLAGS = ['/DWIN32_LEAN_AND_MEAN'])
+        env.Append(CCFLAGS = '/DWIN32_LEAN_AND_MEAN')
+        # Enable full symbolic debugging information
+        env.Append(CCFLAGS = '/Z7')
+        env.Append(LINKFLAGS = '/DEBUG')
 
     opt_level = env['OPT']
     if opt_level == 'production':
         if sys.platform == 'win32':
-            # Enable full optimization
+            # Enable full compiler optimization
             env.Append(CCFLAGS = '/Ox')
             # Enable multithreaded release dll build
             env.Append(CCFLAGS = '/MD')
+            # Enable linker whole program optimization
+            env.Append(LINKFLAGS = '/LTCG')
         else:
             env.Append(CCFLAGS = '-g -O3')
             env.Append(LINKFLAGS= ['-g'])
@@ -1105,9 +1110,6 @@ def SetupBuildEnvironment(conf):
             env.Append(CCFLAGS = '/RTC1')
             # Enable multithreaded debug dll build and define _DEBUG
             env.Append(CCFLAGS = '/MDd')
-            # Enable full symbolic debugging information
-            env.Append(CCFLAGS = '/Z7')
-            env.Append(LINKFLAGS= ['/DEBUG'])
         else:
             env.Append(CCFLAGS = ['-g', '-O0', '-DDEBUG'])
             env.Append(LINKFLAGS= ['-g'])
