@@ -234,7 +234,7 @@ def UnitTest(env, name, sources, **kwargs):
     test_env = env.Clone()
 
     # Do not link with tcmalloc when running under valgrind/coverage env.
-    if sys.platform != 'darwin' and sys.platform != 'win32' and env.get('OPT') != 'coverage' and \
+    if sys.platform not in ['darwin', 'win32'] and env.get('OPT') != 'coverage' and \
            not env['ENV'].has_key('NO_HEAPCHECK') and env.get('OPT') != 'valgrind':
         test_env.Append(LIBPATH = '#/build/lib')
         test_env.Append(LIBS = ['tcmalloc'])
@@ -610,10 +610,11 @@ def SandeshCppBuilder(target, source, env):
                                      'xxd not detected on system')
     with open(cname, 'a') as cfile:
         cfile.write('namespace {\n')
-    subprocess.call('xxd -i ' + hname + ' >> ' + os.path.basename(cname), shell=True, cwd=opath)
-    with open(cname, 'a') as cfile:
+        subprocess.call(['xxd', '-i', hname], stdout=cfile, cwd=opath)
         cfile.write('}\n')
-    subprocess.call('cat ' + tname + ' >> ' + cname, shell=True)
+        with open(tname, 'r') as tfile:
+            for line in tfile:
+                cfile.write(line)
 
 def SandeshSconsEnvCppFunc(env):
     cppbuild = Builder(action = Action(SandeshCppBuilder, 'SandeshCppBuilder $SOURCE -> $TARGETS'))
