@@ -245,8 +245,15 @@ def UnitTest(env, name, sources, **kwargs):
         for t in test_exe_list: t.attributes.skip_run = True
     return test_exe_list
 
+# we are not interested in source files for the dependency, but rather
+# to force rebuilds. Pass an empty source to the env.Command, to break
+# circular dependencies.
+# XXX: This should be rewritten using SCons Value nodes (for generating
+# build info itself) and Builder for managing targets.
 def GenerateBuildInfoCode(env, target, source, path):
-    env.Command(target=target, source=source, action=BuildInfoAction)
+    env.AlwaysBuild(
+        env.Command(target=target, source=[], action=BuildInfoAction)
+    )
     return
 
 # If contrail-controller (i.e., #controller/) is present, determine
@@ -582,13 +589,19 @@ def SandeshSconsEnvOnlyCppFunc(env):
     onlycppbuild = Builder(action = Action(SandeshOnlyCppBuilder,'SandeshOnlyCppBuilder $SOURCE -> $TARGETS'))
     env.Append(BUILDERS = {'SandeshOnlyCpp' : onlycppbuild})
 
-def SandeshGenOnlyCppFunc(env, file):
+def SandeshGenOnlyCppFunc(env, file, extra_suffixes=[]):
     SandeshSconsEnvOnlyCppFunc(env)
     suffixes = ['_types.h',
         '_types.cpp',
         '_constants.h',
         '_constants.cpp',
         '_html.cpp']
+
+    if extra_suffixes:
+        if isinstance(extra_suffixes, basestring):
+            extra_suffixes = [ extra_suffixes ]
+        suffixes += extra_suffixes
+
     basename = Basename(file)
     targets = map(lambda suffix: basename + suffix, suffixes)
     env.Depends(targets, '#build/bin/sandesh' + env['PROGSUFFIX'])
@@ -623,13 +636,19 @@ def SandeshSconsEnvCppFunc(env):
     cppbuild = Builder(action = Action(SandeshCppBuilder, 'SandeshCppBuilder $SOURCE -> $TARGETS'))
     env.Append(BUILDERS = {'SandeshCpp' : cppbuild})
 
-def SandeshGenCppFunc(env, file):
+def SandeshGenCppFunc(env, file, extra_suffixes=[]):
     SandeshSconsEnvCppFunc(env)
     suffixes = ['_types.h',
         '_types.cpp',
         '_constants.h',
         '_constants.cpp',
         '_html.cpp']
+
+    if extra_suffixes:
+        if isinstance(extra_suffixes, basestring):
+            extra_suffixes = [ extra_suffixes ]
+        suffixes += extra_suffixes
+
     basename = Basename(file)
     targets = map(lambda suffix: basename + suffix, suffixes)
     env.Depends(targets, '#build/bin/sandesh' + env['PROGSUFFIX'])
@@ -1189,6 +1208,7 @@ def SetupBuildEnvironment(conf):
     env.AddMethod(ExtractCppFunc, "ExtractCpp")
     env.AddMethod(ExtractCFunc, "ExtractC")
     env.AddMethod(ExtractHeaderFunc, "ExtractHeader")
+    env.AddMethod(GetBuildVersion, "GetBuildVersion")
     env.AddMethod(ProtocGenDescFunc, "ProtocGenDesc")
     env.AddMethod(ProtocGenCppFunc, "ProtocGenCpp")
     env.AddMethod(SandeshGenOnlyCppFunc, "SandeshGenOnlyCpp")
