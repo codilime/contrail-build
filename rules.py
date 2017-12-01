@@ -608,9 +608,10 @@ def SandeshCppBuilder(target, source, env):
     if not env.Detect('xxd'):
         raise SCons.Errors.StopError(SandeshCodeGeneratorError,
                                      'xxd not detected on system')
-    with open(cname, 'a') as cfile:
+    with open(cname, 'w') as cfile:
         cfile.write('namespace {\n')
-        subprocess.call(['xxd', '-i', hname], stdout=cfile, cwd=opath)
+    subprocess.call('xxd -i ' + hname + ' >> ' + os.path.basename(cname), shell=True, cwd=opath)
+    with open(cname, 'a') as cfile:
         cfile.write('}\n')
         with open(tname, 'r') as tfile:
             for line in tfile:
