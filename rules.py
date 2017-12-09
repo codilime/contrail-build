@@ -1085,6 +1085,8 @@ def SetupBuildEnvironment(conf):
         env.Append(CCFLAGS = '/EHsc')
         # Disable min/max macros to avoid conflicts
         env.Append(CCFLAGS = '/DNOMINMAX')
+        # Disable GDI to avoid conflicts with macros
+        env.Append(CCFLAGS = '/DNOGDI')
         # Disable MSVC paranoid warnings
         env.Append(CCFLAGS = ['/D_SCL_SECURE_NO_WARNINGS', '/D_CRT_SECURE_NO_WARNINGS'])
         # Stop Windows.h from including a lot of useless header files
